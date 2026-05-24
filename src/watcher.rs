@@ -5,7 +5,6 @@ use async_watcher::{
 };
 use std::{path::PathBuf, time::Duration};
 use tokio::sync::watch::Sender;
-use log::debug;
 
 pub async fn watch(
     config_path: PathBuf,

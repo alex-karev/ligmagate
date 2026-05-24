@@ -1,3 +1,4 @@
+use anyhow::{Result, anyhow};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -41,17 +42,25 @@ struct Model {
     routing: Vec<String>,
     #[serde(default)]
     providers: HashMap<String, ProviderModel>,
+    temperature: Option<f32>,
+    #[serde(default)]
+    extra_headers: HashMap<String, String>,
+    #[serde(default)]
+    extra_body: Vec<ExtraBody>,
 }
 
 /// Model variants with custom parameters and system prompts
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Variants {
-    #[serde(rename = "type", default)]
-    kind: VariantKind,
     model: String,
     system_prompt: Option<PathBuf>,
     #[serde(default)]
     system_prompt_mode: PromptMode,
+    #[serde(default)]
+    extra_headers: HashMap<String, String>,
+    #[serde(default)]
+    extra_body: Vec<ExtraBody>,
+    temperature: Option<f32>,
 }
 
 /// Per-provider settings for models
@@ -59,37 +68,46 @@ struct Variants {
 struct ProviderModel {
     model_name: Option<String>,
     #[serde(default)]
+    extra_headers: HashMap<String, String>,
+    #[serde(default)]
     extra_body: Vec<ExtraBody>,
 }
 
 /// Extra request body
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct ExtraBody {
+pub struct ExtraBody {
     pointer: String,
     value: toml::Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
-enum ProviderKind {
+pub enum ProviderKind {
     #[default]
     OpenaiCompatible,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
-enum VariantKind {
-    #[default]
-    ChatCompletion,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-#[serde(rename_all = "snake_case")]
-enum PromptMode {
+pub enum PromptMode {
     Replace,
     Combine,
     #[default]
     Fallback,
+}
+
+/// API-agnostic forwarder data
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ForwarderData {
+    pub provider_kind: ProviderKind,
+    pub api_base: String,
+    pub api_key: String,
+    pub model_name: String,
+    pub extra_body: Vec<ExtraBody>,
+    pub extra_headers: HashMap<String, String>,
+    pub system_prompt: Option<PathBuf>,
+    pub system_prompt_mode: PromptMode,
+    pub temperature: Option<f32>,
 }
 
 impl Config {
@@ -238,7 +256,7 @@ impl Config {
     /// Returns application api key
     pub fn get_api_key(&self) -> Option<String> {
         self.api_key.as_ref().and_then(|key| {
-            if let Some(var_name) = key.strip_prefix("env:") {
+            if let Some(var_name) = key.strip_prefix("env::") {
                 env::var(var_name).ok()
             } else {
                 Some(key.clone())
@@ -294,5 +312,95 @@ impl Config {
         } else {
             env::var(key).ok()
         }
+    }
+
+    // Get forwarder data
+    pub fn get_forwarder_data(&self, model_name: &str) -> Result<ForwarderData> {
+        // Check variant
+        let variant = self.variants.get(model_name);
+
+        // Get model
+        let model_name = if variant.is_some() {
+            &variant.unwrap().model
+        } else {
+            model_name
+        };
+        let model = self
+            .models
+            .get(model_name)
+            .ok_or(anyhow!("Model {} not defined", model_name))?;
+
+        // Get provider
+        // TODO: Add proper routing
+        let provider_name = model
+            .routing
+            .first()
+            .ok_or(anyhow!("Model {} has no providers", model_name))?;
+        let provider = self
+            .providers
+            .get(provider_name)
+            .ok_or(anyhow!("Provider {} not found", provider_name))?;
+        let provider_kind = provider.kind.clone();
+
+        // Get base url and api key
+        let api_base = match provider_kind {
+            ProviderKind::OpenaiCompatible => provider
+                .api_base
+                .clone()
+                .ok_or(anyhow!("No url specified for provider {}", provider_name))?,
+        };
+        let api_key = provider.api_key.clone().unwrap_or("".to_string());
+        let api_key = if api_key.starts_with("env::") {
+            self.get_env(&api_key.strip_prefix("env::").unwrap()).unwrap_or("".to_string())
+        } else {
+            api_key
+        };
+
+        // Add extra body and headers
+        let mut extra_body = Vec::new();
+        let mut extra_headers = HashMap::new();
+        extra_body.extend(model.extra_body.clone());
+        extra_headers.extend(model.extra_headers.clone());
+        if let Some(model_provider) = model.providers.get(provider_name) {
+            extra_body.extend(model_provider.extra_body.clone());
+            extra_headers.extend(model_provider.extra_headers.clone());
+        }
+        if let Some(v) = variant {
+            extra_body.extend(v.extra_body.clone());
+            extra_headers.extend(v.extra_headers.clone());
+        }
+
+        // Add system prompt
+        let (system_prompt, system_prompt_mode) = if let Some(v) = variant {
+            (v.system_prompt.clone(), v.system_prompt_mode.clone())
+        } else {
+            (None, PromptMode::Fallback)
+        };
+
+        // Add other parameters
+        let temperature = variant
+            .map_or(model.temperature, |v| v.temperature.or(model.temperature))
+            .or(model.temperature);
+
+        // Check Provider-specific model name
+        let model_name = if let Some(model_provider) = model.providers.get(provider_name) {
+            model_provider.model_name.as_deref().unwrap_or(model_name)
+        } else {
+            model_name
+        }
+        .to_string();
+
+        // Return forwarder data
+        Ok(ForwarderData {
+            provider_kind,
+            api_base,
+            api_key,
+            extra_body,
+            extra_headers,
+            temperature,
+            model_name,
+            system_prompt,
+            system_prompt_mode,
+        })
     }
 }
