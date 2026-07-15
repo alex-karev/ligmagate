@@ -18,7 +18,7 @@
     in {
       #defaultPackage = naersk-lib.buildPackage ./.;
       devShell = pkgs.mkShell {
-        name = "ratman";
+        name = "mulegate";
         buildInputs = with pkgs; [
           cargo
           rustc

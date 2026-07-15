@@ -1,5 +1,5 @@
 use clap::Parser;
-use config::Config;
+use config::{Config, PromptMode};
 use server::serve;
 use std::path::PathBuf;
 use watcher::watch;
@@ -49,6 +49,7 @@ fn main() {
                 .init();
 
             // Load config
+            let path_copy = config_path.clone();
             let config = Config::load(&config_path).await.unwrap();
             let env_file = config.get_env_file();
             let (tx, rx) = tokio::sync::watch::channel(config);
@@ -59,6 +60,6 @@ fn main() {
             });
 
             // Start server
-            serve(rx).await
+            serve(rx, path_copy).await
         })
 }

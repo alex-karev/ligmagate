@@ -1,11 +1,18 @@
-use crate::Config;
+use crate::{Config, PromptMode};
 use axum::{
     Json, Router,
-    http::StatusCode,
-    routing::{get, post},
+    body::{Body, Bytes},
+    extract::{Request, State},
+    http::{HeaderMap, Method, StatusCode},
+    response::{IntoResponse, Response},
+    routing::post,
 };
-use log::{info, debug};
-use std::sync::Arc;
+use jsonptr::Pointer;
+use log::{debug, error, info};
+use minijinja::{Environment, context};
+use reqwest::Client;
+use serde_json::{Value, json};
+use std::{os::linux::raw::stat, path::PathBuf, sync::Arc};
 use tokio::signal;
 use tokio::sync::RwLock;
 use tokio::sync::watch::Receiver;
@@ -13,10 +20,12 @@ use tokio::sync::watch::Receiver;
 #[derive(Clone)]
 struct AppState {
     config: Arc<RwLock<Config>>,
+    client: Client,
+    config_path: PathBuf,
 }
 
 /// Start Axum server
-pub async fn serve(mut rx: Receiver<Config>) {
+pub async fn serve(mut rx: Receiver<Config>, config_path: PathBuf) {
     // Spawn config update task
     let config = rx.borrow_and_update().clone();
     let config = Arc::new(RwLock::new(config));
@@ -33,7 +42,12 @@ pub async fn serve(mut rx: Receiver<Config>) {
     });
 
     // Create app state
-    let state = AppState { config };
+    let client = Client::new();
+    let state = AppState {
+        config,
+        client,
+        config_path,
+    };
 
     // Get data from config
     let cfg = state.config.read().await;
@@ -42,9 +56,10 @@ pub async fn serve(mut rx: Receiver<Config>) {
     let reload = cfg.is_reload_enabled();
     drop(cfg);
 
-
     // Create app and add routes
-    let app = Router::new().with_state(state);
+    let app = Router::new()
+        .route("/v1/chat/completions", post(chat_completions))
+        .with_state(state);
 
     // `GET /` goes to `root`
     // .route("/", get(root))
@@ -77,6 +92,150 @@ pub async fn serve(mut rx: Receiver<Config>) {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
+}
+
+// Chat completion api
+async fn chat_completions(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(mut body): Json<Value>,
+) -> Response {
+    // Get data
+    let model = body.get("model").map_or("", |x| x.as_str().unwrap_or(""));
+    let data = state.config.read().await.get_data(model);
+    if let Err(e) = data {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": format!("Error extracting model data: {e}") })),
+        )
+            .into_response();
+    }
+    let data = data.unwrap();
+
+    // Set model
+    body["model"] = json!(data.model_name);
+
+    // Set system prompt
+    if let Some(system_prompt) = data.system_prompt {
+        if let Some(messages) = body.get_mut("messages").and_then(|v| v.as_array_mut()) {
+            if let Some(message) = messages.get(0) {
+                // Load template
+                let mut env = Environment::new();
+                let mut template_path = state.config_path.clone();
+                template_path.push("templates");
+                env.set_loader(minijinja::path_loader(template_path));
+                if let Some(template) = env.get_template(system_prompt.to_str().unwrap()).ok() {
+                    // Get requested system_prompt
+                    let req_message = message
+                        .get("content")
+                        .and_then(|v| Some(String::from(v.as_str().unwrap_or(""))))
+                        .unwrap_or(String::from(""));
+
+                    // Render new system prompt
+                    let mut system_prompt_render = template
+                        .render(context!(
+                                system_prompt => if data.system_prompt_mode == PromptMode::Combine {
+                                    req_message.clone()
+                                } else {
+                                    String::from("")
+                                }
+                        ))
+                        .unwrap_or(String::from(""));
+
+                    // Add requested system prompt to the end if missing in template
+                    let vars = template.undeclared_variables(false);
+                    if data.system_prompt_mode == PromptMode::Combine
+                        && !vars.contains("system_prompt")
+                    {
+                        system_prompt_render.push_str(&format!("\n{}", &req_message));
+                    }
+
+                    // Remove default system prompt
+                    if message
+                        .get("role")
+                        .and_then(|v| Some(v == "system"))
+                        .unwrap_or(false)
+                    {
+                        if data.system_prompt_mode != PromptMode::Fallback {
+                            messages.remove(0);
+                        }
+                    }
+
+                    // Add new system_prompt
+                    messages.insert(
+                        0,
+                        json!({
+                            "role": "system",
+                            "content": system_prompt
+                        }),
+                    );
+                }
+            }
+        }
+    }
+
+    // Add extra body from config
+    for extra in &data.extra_body {
+        if let Some(pointer) = Pointer::parse(&extra.pointer).ok() {
+            pointer.assign(&mut body, extra.value.clone()).unwrap();
+        } else {
+            error!("Skipping invalid pointer {}", extra.pointer);
+        }
+    }
+
+    // Build request
+    let mut req = state
+        .client
+        .post(format!("{}/chat/completions", data.api_base))
+        .bearer_auth(data.api_key)
+        .json(&body);
+
+    // Add extra headers
+    for (k, v) in &data.extra_headers {
+        req = req.header(k, v);
+    }
+
+    debug!("Request will be sent: {:?}\nContent: {:?}", req, body);
+
+    // Get streaming parameters
+    let stream = body
+        .get("stream")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let openai_response = match req.send().await {
+        Ok(res) => res,
+        Err(err) => {
+            tracing::error!(%err, "OpenAI request failed");
+
+            return (
+                StatusCode::BAD_GATEWAY,
+                format!("OpenAI request failed: {err}"),
+            )
+                .into_response();
+        }
+    };
+
+    // Create a response builder with the upstream status code
+    let mut response_builder = Response::builder().status(openai_response.status());
+
+    // Forward the headers (crucial for "content-type: text/event-stream")
+    if let Some(headers_mut) = response_builder.headers_mut() {
+        *headers_mut = openai_response.headers().clone();
+    }
+
+    // Convert reqwest's ByteStream into axum's Body
+    let stream = openai_response.bytes_stream();
+    let body = axum::body::Body::from_stream(stream);
+
+    // Return the finalized response
+    match response_builder.body(body) {
+        Ok(response) => response,
+        Err(err) => {
+            tracing::error!(%err, "Failed to build response body");
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
 }
 
 // Shutdown gracefully

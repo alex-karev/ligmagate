@@ -75,11 +75,19 @@ struct ProviderModel {
 
 /// Extra request body
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExtraBody {
+struct ExtraBody {
     pointer: String,
     value: toml::Value,
 }
 
+/// Extra request body with json values
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtraBodyJson {
+    pub pointer: String,
+    pub value: serde_json::Value,
+}
+
+/// Type of the API used by provider
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderKind {
@@ -87,6 +95,7 @@ pub enum ProviderKind {
     OpenaiCompatible,
 }
 
+/// Prompt conflict handling mode
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum PromptMode {
@@ -96,14 +105,14 @@ pub enum PromptMode {
     Fallback,
 }
 
-/// API-agnostic forwarder data
+/// API-agnostic request forwarder data
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ForwarderData {
+pub struct RequestData {
     pub provider_kind: ProviderKind,
     pub api_base: String,
     pub api_key: String,
     pub model_name: String,
-    pub extra_body: Vec<ExtraBody>,
+    pub extra_body: Vec<ExtraBodyJson>,
     pub extra_headers: HashMap<String, String>,
     pub system_prompt: Option<PathBuf>,
     pub system_prompt_mode: PromptMode,
@@ -315,7 +324,7 @@ impl Config {
     }
 
     // Get forwarder data
-    pub fn get_forwarder_data(&self, model_name: &str) -> Result<ForwarderData> {
+    pub fn get_data(&self, model_name: &str) -> Result<RequestData> {
         // Check variant
         let variant = self.variants.get(model_name);
 
@@ -351,7 +360,8 @@ impl Config {
         };
         let api_key = provider.api_key.clone().unwrap_or("".to_string());
         let api_key = if api_key.starts_with("env::") {
-            self.get_env(&api_key.strip_prefix("env::").unwrap()).unwrap_or("".to_string())
+            self.get_env(&api_key.strip_prefix("env::").unwrap())
+                .unwrap_or("".to_string())
         } else {
             api_key
         };
@@ -369,6 +379,12 @@ impl Config {
             extra_body.extend(v.extra_body.clone());
             extra_headers.extend(v.extra_headers.clone());
         }
+
+        // Convert extra body to json
+        let extra_body = extra_body.iter().map(|x| ExtraBodyJson {
+            pointer: x.pointer.clone(),
+            value: toml_to_json(&x.value),
+        }).collect();
 
         // Add system prompt
         let (system_prompt, system_prompt_mode) = if let Some(v) = variant {
@@ -391,7 +407,7 @@ impl Config {
         .to_string();
 
         // Return forwarder data
-        Ok(ForwarderData {
+        Ok(RequestData {
             provider_kind,
             api_base,
             api_key,
@@ -402,5 +418,24 @@ impl Config {
             system_prompt,
             system_prompt_mode,
         })
+    }
+}
+
+// Convert toml values to json
+fn toml_to_json(val: &toml::Value) -> serde_json::Value {
+    match val {
+        toml::Value::String(s) => serde_json::Value::String(s.clone()),
+        toml::Value::Integer(i) => serde_json::Value::Number((*i).into()),
+        toml::Value::Float(f) => {
+            serde_json::Value::Number(serde_json::Number::from_f64(*f).unwrap_or(0.into()))
+        }
+        toml::Value::Boolean(b) => serde_json::Value::Bool(*b),
+        toml::Value::Datetime(d) => serde_json::Value::String(d.to_string()),
+        toml::Value::Array(a) => serde_json::Value::Array(a.iter().map(toml_to_json).collect()),
+        toml::Value::Table(t) => serde_json::Value::Object(
+            t.iter()
+                .map(|(k, v)| (k.clone(), toml_to_json(v)))
+                .collect(),
+        ),
     }
 }
