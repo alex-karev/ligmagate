@@ -7,7 +7,7 @@
 
 # The app reads your env variables but it is also possible to configure it to read a custom env file.
 
-# env_file = "~/.config/ligmagate/settings.env"
+# env_file = "~/.config/ollmo/settings.env"
 
 # If you want to use env vars for api keys, prefix them with "env::"
 # You can protect the endpoint with custom api key like this:

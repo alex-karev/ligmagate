@@ -20,7 +20,7 @@
         src = ./.;
       };
       devShell = pkgs.mkShell {
-        name = "ligmagate";
+        name = "ollmo";
         buildInputs = with pkgs; [
           cargo
           rustc
@@ -40,25 +40,25 @@
           pkgs,
           ...
         }: let
-          cfg = config.services.ligmagate;
+          cfg = config.services.ollmo;
         in
           with lib; {
-            options.services.ligmagate = {
-              enable = mkEnableOption "ligmagate";
+            options.services.ollmo = {
+              enable = mkEnableOption "ollmo";
               configPath = mkOption {
                 type = types.path;
-                default = "/etc/ligmagate";
-                description = "Path to the ligmagate configs.";
+                default = "/etc/ollmo";
+                description = "Path to the ollmo configs.";
               };
             };
 
             config = mkIf cfg.enable {
-              systemd.services.ligmagate = {
+              systemd.services.ollmo = {
                 description = "OpenAI API-compatible LLM gateway";
                 wantedBy = ["multi-user.target"];
                 serviceConfig = {
                   Type = "simple";
-                  ExecStart = "${self.packages.${pkgs.system}.default}/bin/ligmagate -c ${cfg.configPath}";
+                  ExecStart = "${self.packages.${pkgs.system}.default}/bin/ollmo -c ${cfg.configPath}";
                   Restart = "on-failure";
                 };
               };
@@ -66,7 +66,7 @@
           };
       in {
         default = module;
-        ligmagate = module;
+        ollmo = module;
       };
     };
 }

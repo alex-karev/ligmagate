@@ -1,5 +1,5 @@
 [package]
-name = "ligmagate"
+name = "ollmo"
 version = "0.1.1"
 edition = "2024"
 authors = ["Alex Karev"]
@@ -7,7 +7,7 @@ license-file = "LICENSE"
 keywords = ["llm", "gateway"]
 categories = ["command-line-utilities", "artificial-intelligence"]
 description = "OpenAI API-compatible LLM gateway for personal use."
-repository = "https://github.com/alex-karev/ligmagate"
+repository = "https://github.com/alex-karev/ollmo"
 readme = "README.md"
 
 [dependencies]

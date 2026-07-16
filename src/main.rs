@@ -28,7 +28,7 @@ fn main() {
     let args = Args::parse();
     let config_path = args.config.unwrap_or_else(|| {
         let mut config_path = dirs::config_dir().unwrap();
-        config_path.push("ligmagate");
+        config_path.push("ollmo");
         config_path
     });
 

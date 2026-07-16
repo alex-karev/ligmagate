@@ -11,22 +11,22 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <!-- <a href="https://github.com/alex-karev/ligmagate"> -->
+  <!-- <a href="https://github.com/alex-karev/ollmo"> -->
   <!--   <img src="images/logo.png" alt="Logo" width="80" height="80"> -->
   <!-- </a> -->
 
-  <h3 align="center">LigmaGate</h3>
+  <h3 align="center">ollmo</h3>
 
   <p align="center">
     OpenAI API-compatible LLM gateway for personal use.
     <!-- <br /> -->
-    <!-- <a href="https://github.com/alex-karev/ligmagate"><strong>Explore the docs »</strong></a> -->
+    <!-- <a href="https://github.com/alex-karev/ollmo"><strong>Explore the docs »</strong></a> -->
     <!-- <br /> -->
     <br />
     &middot;
-    <a href="https://github.com/alex-karev/ligmagate/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/alex-karev/ollmo/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/alex-karev/ligmagate/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/alex-karev/ollmo/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
@@ -70,7 +70,7 @@ This project aims to solve this exact problem by providing a self-hosted gateway
 Main features:
 
 * Lightweight and written in Rust.
-* Robust [config format](https://github.com/alex-karev/ligmagate/blob/main/config.example.toml) allowing adding new providers, models and their customized variants easily.
+* Robust [config format](https://github.com/alex-karev/ollmo/blob/main/config.example.toml) allowing adding new providers, models and their customized variants easily.
 * Supports replacing or combining system prompts for any LLM-powered tools you use.
 * Does not depend on env variables. Supports storing keys in a separate env file.
 * Self-hosted, can run as systemd service.
@@ -101,22 +101,22 @@ NixOS:
 
 1. Add this into your system flake inputs:
    ```nix
-   ligmagate = {
-     url = "github:alex-karev/ligmagate";
+   ollmo = {
+     url = "github:alex-karev/ollmo";
      inputs.nixpkgs.follows = "nixpkgs";
    };
    ```
 2. Add module to your config:
    ```nix
    imports = [
-     inputs.ligmagate.nixosModules.ligmagate
+     inputs.ollmo.nixosModules.ollmo
    ];
    ```
 3. Enable the service somewhere in your system config:
    ```nix
-   services.ligmagate = {
+   services.ollmo = {
        enable = true;
-       # configPath = "/etc/ligmagate";
+       # configPath = "/etc/ollmo";
    };
    ```
 
@@ -124,7 +124,7 @@ Other distros:
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/alex-karev/ligmagate.git
+   git clone https://github.com/alex-karev/ollmo.git
    ```
 2. Build
    ```sh
@@ -139,10 +139,10 @@ Other distros:
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-By default, the config files are stored in `~/.config/ligmagate` or in `/etc/ligmagate`.
+By default, the config files are stored in `~/.config/ollmo` or in `/etc/ollmo`.
 Config path can be customized with `--config` argument.
 
-_Refer to this [config example](https://github.com/alex-karev/ligmagate/blob/main/config.example.toml) for more details_
+_Refer to this [config example](https://github.com/alex-karev/ollmo/blob/main/config.example.toml) for more details_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -159,7 +159,7 @@ _Refer to this [config example](https://github.com/alex-karev/ligmagate/blob/mai
 - [ ] Add built-in providers like OpenAI and Deepseek.
 - [ ] Add Claude support.
 
-See the [open issues](https://github.com/alex-karev/ligmagate/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/alex-karev/ollmo/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -181,8 +181,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/alex-karev/ligmagate/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=alex-karev/ligmagate" alt="contrib.rocks image" />
+<a href="https://github.com/alex-karev/ollmo/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=alex-karev/ollmo" alt="contrib.rocks image" />
 </a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -201,7 +201,7 @@ Distributed under the GPL-3.0 License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [https://github.com/alex-karev/ligmagate](https://github.com/alex-karev/ligmagate)
+Project Link: [https://github.com/alex-karev/ollmo](https://github.com/alex-karev/ollmo)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -215,16 +215,16 @@ Project Link: [https://github.com/alex-karev/ligmagate](https://github.com/alex-
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/alex-karev/ligmagate.svg?style=for-the-badge
-[contributors-url]: https://github.com/alex-karev/ligmagate/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/alex-karev/ligmagate.svg?style=for-the-badge
-[forks-url]: https://github.com/alex-karev/ligmagate/network/members
-[stars-shield]: https://img.shields.io/github/stars/alex-karev/ligmagate.svg?style=for-the-badge
-[stars-url]: https://github.com/alex-karev/ligmagate/stargazers
-[issues-shield]: https://img.shields.io/github/issues/alex-karev/ligmagate.svg?style=for-the-badge
-[issues-url]: https://github.com/alex-karev/ligmagate/issues
-[license-shield]: https://img.shields.io/github/license/alex-karev/ligmagate.svg?style=for-the-badge
-[license-url]: https://github.com/alex-karev/ligmagate/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/alex-karev/ollmo.svg?style=for-the-badge
+[contributors-url]: https://github.com/alex-karev/ollmo/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/alex-karev/ollmo.svg?style=for-the-badge
+[forks-url]: https://github.com/alex-karev/ollmo/network/members
+[stars-shield]: https://img.shields.io/github/stars/alex-karev/ollmo.svg?style=for-the-badge
+[stars-url]: https://github.com/alex-karev/ollmo/stargazers
+[issues-shield]: https://img.shields.io/github/issues/alex-karev/ollmo.svg?style=for-the-badge
+[issues-url]: https://github.com/alex-karev/ollmo/issues
+[license-shield]: https://img.shields.io/github/license/alex-karev/ollmo.svg?style=for-the-badge
+[license-url]: https://github.com/alex-karev/ollmo/blob/master/LICENSE
 [Rust]: https://img.shields.io/badge/rust-000000?style=for-the-badge&logo=rust&logoColor=white
 [Rust-url]: https://rust-lang.org/
 [Tokio]: https://img.shields.io/badge/tokio-000000?style=for-the-badge&logo=tokio&logoColor=white
