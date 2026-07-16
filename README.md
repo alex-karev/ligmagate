@@ -20,13 +20,13 @@
   <p align="center">
     OpenAI API-compatible LLM gateway for personal use.
     <!-- <br /> -->
-    <!-- <a href="https://github.com/alex-karev/ligmagatge"><strong>Explore the docs »</strong></a> -->
+    <!-- <a href="https://github.com/alex-karev/ligmagate"><strong>Explore the docs »</strong></a> -->
     <!-- <br /> -->
     <br />
     &middot;
-    <a href="https://github.com/alex-karev/ligmagatge/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/alex-karev/ligmagate/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/alex-karev/ligmagatge/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/alex-karev/ligmagate/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
