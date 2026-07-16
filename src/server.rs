@@ -1,9 +1,8 @@
 use crate::{Config, PromptMode};
 use axum::{
     Json, Router,
-    body::{Body, Bytes},
-    extract::{Request, State},
-    http::{HeaderMap, Method, StatusCode},
+    extract::{State},
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     routing::post,
 };
@@ -12,7 +11,7 @@ use log::{debug, error, info};
 use minijinja::{Environment, context};
 use reqwest::Client;
 use serde_json::{Value, json};
-use std::{os::linux::raw::stat, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 use tokio::signal;
 use tokio::sync::RwLock;
 use tokio::sync::watch::Receiver;
@@ -97,7 +96,7 @@ pub async fn serve(mut rx: Receiver<Config>, config_path: PathBuf) {
 // Chat completion api
 async fn chat_completions(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _headers: HeaderMap,
     Json(mut body): Json<Value>,
 ) -> Response {
     // Get data
@@ -166,7 +165,7 @@ async fn chat_completions(
                         0,
                         json!({
                             "role": "system",
-                            "content": system_prompt
+                            "content": system_prompt_render
                         }),
                     );
                 }
@@ -198,10 +197,10 @@ async fn chat_completions(
     debug!("Request will be sent: {:?}\nContent: {:?}", req, body);
 
     // Get streaming parameters
-    let stream = body
-        .get("stream")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+    // let stream = body
+    //     .get("stream")
+    //     .and_then(|v| v.as_bool())
+    //     .unwrap_or(false);
 
     let openai_response = match req.send().await {
         Ok(res) => res,

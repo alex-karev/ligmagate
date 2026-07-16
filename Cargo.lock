@@ -900,6 +900,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ligmagate"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "async-watcher",
+ "axum",
+ "clap",
+ "dirs",
+ "jsonptr",
+ "log",
+ "minijinja",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
+]
+
+[[package]]
 name = "litemap"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -970,30 +994,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "mulegate"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "async-watcher",
- "axum",
- "clap",
- "dirs",
- "jsonptr",
- "log",
- "minijinja",
- "reqwest",
- "serde",
- "serde_json",
- "shellexpand",
- "tokio",
- "toml",
- "tracing",
- "tracing-subscriber",
- "walkdir",
 ]
 
 [[package]]

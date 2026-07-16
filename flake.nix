@@ -16,9 +16,11 @@
       pkgs = import nixpkgs {inherit system;};
       naersk-lib = pkgs.callPackage naersk {};
     in {
-      #defaultPackage = naersk-lib.buildPackage ./.;
+      packages.default = naersk-lib.buildPackage {
+        src = ./.;
+      };
       devShell = pkgs.mkShell {
-        name = "mulegate";
+        name = "ligmagate";
         buildInputs = with pkgs; [
           cargo
           rustc
@@ -29,5 +31,30 @@
         ];
         RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
       };
-    });
+    })
+    // {
+      nixosModules.default = { config, lib, pkgs, ... }:
+        with lib; {
+          options.services.ligmagate = {
+            enable = mkEnableOption "ligmagate";
+            configPath = mkOption {
+              type = types.path;
+              default = "/etc/ligmagate";
+              description = "Path to the ligmagate configs.";
+            };
+          };
+
+          config = mkIf config.services.ligmagate.enable {
+            systemd.services.ligmagate = {
+              description = "OpenAI API-compatible LLM gateway";
+              wantedBy = ["multi-user.target"];
+              serviceConfig = {
+                Type = "simple";
+                ExecStart = "${self.packages.${pkgs.system}.default}/bin/ligmagate -c ${cfg.configPath}";
+                Restart = "on-failure";
+              };
+            };
+          };
+        };
+    };
 }

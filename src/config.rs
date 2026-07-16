@@ -254,12 +254,12 @@ impl Config {
 
     /// Returns application port
     pub fn get_port(&self) -> u16 {
-        self.port.unwrap_or(6969)
+        self.port.unwrap_or(3000)
     }
 
     /// Returns application host
     pub fn get_host(&self) -> String {
-        self.host.clone().unwrap_or(String::from("0.0.0.0"))
+        self.host.clone().unwrap_or(String::from("localhost"))
     }
 
     /// Returns application api key

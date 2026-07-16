@@ -1,0 +1,116 @@
+###########
+# General #
+###########
+
+# This config may be split into multiple files.
+# The program reads all toml files from config directory and combines them.
+
+# The app reads your env variables but it is also possible to configure it to read a custom env file.
+
+# env_file = "~/.config/ligmagate/settings.env"
+
+# If you want to use env vars for api keys, prefix them with "env::"
+# You can protect the endpoint with custom api key like this:
+
+# api_key = "your-api-key"
+
+# Or with env var like this
+
+# api_key = "env::APP_KEY"
+
+# By default it is running on port 3042.
+# Uncomment this line to change this behavior:
+
+# port = 3042
+
+# By default it is accessible for localhost only.
+# Uncomment to make it work with reverse proxy or remote access.
+
+# host = "0.0.0.0"
+
+# Uncomment this line to disable config hot reload.
+# Hot reload is enabled by default
+
+# no_reload = true
+
+#############
+# Providers #
+#############
+
+# You can add any OpenAI compatible providers here.
+# Assign a custom provider name,
+# set its type (only openai_compatible is supported at the moment),
+# set base url and api key.
+
+# [providers.example_provider]
+# type = "openai_compatible"
+# api_base = "https://api.example.com/v1"
+# api_key = "env::EXAMPLE_API_KEY"
+
+##########
+# Models #
+##########
+
+# Then you can add models.
+# Assign custom model name and specify providers in routing.
+
+# [models.example-model]
+# routing = ["example_provider"]
+
+# You can customize settings for each provider individually:
+
+# providers.example_provider = {
+#  model_name = "example-model-name"
+
+#  Extra json request body in JSON pointer format
+
+#  extra_body = [
+#    {pointer = "/temperature", value = 0.6},
+#    {pointer = "/thinking/type", value = "disabled"},
+#    {pointer = "/skip_empty_messages", value = true},
+#    {pointer = "/top_p", value = 0.95}
+#  ]
+
+#  Extra headers
+
+#  extra_headers = {
+#    SOMEHEADER = "somevalue"
+#  }
+# }
+
+# Then you can just use these models by specifying the "model" parameter 
+# and the chat completion endpoint on http://localhost:port/v1/chat/completions 
+# will redirect your request to the specified providers.
+
+############
+# Variants #
+############
+
+# You can also make customized variants of your models.
+# They work the same way as base models, but they allow you to customize system_prompt, extra_body and extra_headers
+# for individual use cases.
+
+# [variants.example_variant]
+
+# Choose previously defined model which will be used for this variant
+
+# model = "example-model"
+
+# There are 3 system prompt modes: combine, replace and fallback
+# - combine: adds your system prompt after the original system prompt or replaces {{system_prompt}} in your template
+# - replace: replaces the original system prompt with a custom one
+# - fallback: adds a custom system prompt only if no system prompt specified
+#
+# system_prompt_mode = "combine"
+
+# Put your prompts inside "templates" sub-directory in your config directory
+# They use minijinja format.
+# Including one template into another one is also supported.
+# Use the {{system_prompt}} variable to control where the original prompt goes in "combine" mode.
+
+# system_prompt = "example.minijinja"
+
+# Custom body and headers are also supported
+
+# extra_headers = {...}
+# extra_body = [...]
