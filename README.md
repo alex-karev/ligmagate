@@ -1,6 +1,7 @@
 <a id="readme-top"></a>
 
 <!-- PROJECT SHIELDS -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -211,6 +212,7 @@ Project Link: [https://github.com/alex-karev/ligmagate](https://github.com/alex-
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) - for readme template
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/alex-karev/ligmagate.svg?style=for-the-badge
