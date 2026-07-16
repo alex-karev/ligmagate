@@ -1,10 +1,10 @@
 use crate::{Config, PromptMode};
 use axum::{
     Json, Router,
-    extract::{State},
+    extract::State,
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{get, post},
 };
 use jsonptr::Pointer;
 use log::{debug, error, info};
@@ -58,6 +58,7 @@ pub async fn serve(mut rx: Receiver<Config>, config_path: PathBuf) {
     // Create app and add routes
     let app = Router::new()
         .route("/v1/chat/completions", post(chat_completions))
+        .route("/v1/models", get(list_models))
         .with_state(state);
 
     // `GET /` goes to `root`
@@ -235,6 +236,28 @@ async fn chat_completions(
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
+}
+
+// List models endpoint
+async fn list_models(State(state): State<AppState>) -> Response {
+    let cfg = state.config.read().await;
+    let names = cfg.list_models();
+    let data: Vec<Value> = names
+        .into_iter()
+        .map(|id| {
+            json!({
+                "id": id,
+                "object": "model",
+                "created": 0,
+                "owned_by": "user"
+            })
+        })
+        .collect();
+    Json(json!({
+        "object": "list",
+        "data": data
+    }))
+    .into_response()
 }
 
 // Shutdown gracefully

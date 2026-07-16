@@ -278,12 +278,12 @@ impl Config {
         !self.no_reload
     }
 
-    // Get env file path
+    /// Get env file path
     pub fn get_env_file(&self) -> Option<PathBuf> {
         self.env_file.clone()
     }
 
-    // Load env
+    /// Load env
     pub fn load_env(&mut self) {
         // Skip if nothing to load
         let Some(path) = &self.env_file else { return };
@@ -314,7 +314,7 @@ impl Config {
         }
     }
 
-    // Get env variable
+    /// Get env variable
     pub fn get_env(&self, key: &str) -> Option<String> {
         if let Some(value) = self.env.get(key) {
             Some(value.clone())
@@ -323,7 +323,7 @@ impl Config {
         }
     }
 
-    // Get forwarder data
+    /// Get forwarder data
     pub fn get_data(&self, model_name: &str) -> Result<RequestData> {
         // Check variant
         let variant = self.variants.get(model_name);
@@ -381,10 +381,13 @@ impl Config {
         }
 
         // Convert extra body to json
-        let extra_body = extra_body.iter().map(|x| ExtraBodyJson {
-            pointer: x.pointer.clone(),
-            value: toml_to_json(&x.value),
-        }).collect();
+        let extra_body = extra_body
+            .iter()
+            .map(|x| ExtraBodyJson {
+                pointer: x.pointer.clone(),
+                value: toml_to_json(&x.value),
+            })
+            .collect();
 
         // Add system prompt
         let (system_prompt, system_prompt_mode) = if let Some(v) = variant {
@@ -418,6 +421,13 @@ impl Config {
             system_prompt,
             system_prompt_mode,
         })
+    }
+
+    /// List models and variants
+    pub fn list_models(&self) -> Vec<String> {
+        let mut names: Vec<String> = self.models.keys().cloned().collect();
+        names.extend(self.variants.keys().cloned());
+        names
     }
 }
 
