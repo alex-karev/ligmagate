@@ -11,9 +11,9 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <!-- <a href="https://github.com/alex-karev/ollmo"> -->
-  <!--   <img src="images/logo.png" alt="Logo" width="80" height="80"> -->
-  <!-- </a> -->
+  <a href="https://github.com/alex-karev/ollmo">
+    <img src="images/logo.png" alt="Logo" width="80" height="80">
+  </a>
 
   <h3 align="center">Ollmo: Open LLM Orchestrator</h3>
 
